@@ -3,17 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
-  "engines": {
-    "node": ">=24"
-  },
   "scripts": {
     "build": "nest build",
+    "prepare": "husky",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --check src migrations package.json tsconfig.json tsconfig.build.json nest-cli.json jest.config.ts",
+    "format:write": "oxfmt --write src migrations package.json tsconfig.json tsconfig.build.json nest-cli.json jest.config.ts",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test:coverage": "jest --coverage",
     "db:migrate": "node-pg-migrate up",
     "db:rollback": "node-pg-migrate down"
   },
@@ -37,9 +39,15 @@
     "@types/node": "^24.0.0",
     "@types/pg": "^8.11.10",
     "esbuild-register": "^3.6.0",
+    "husky": "^9.1.7",
     "jest": "^30.5.2",
     "node-pg-migrate": "^8.0.4",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
     "ts-jest": "^29.4.15",
     "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }
