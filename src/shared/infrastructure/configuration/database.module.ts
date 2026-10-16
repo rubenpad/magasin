@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { StoreEntity } from "@infrastructure/adapters/out/persistence/entities/storeEntity";
 import { StoreScheduleEntity } from "@infrastructure/adapters/out/persistence/entities/storeScheduleEntity";
+import { StoreSearchRequestEntity } from "@infrastructure/adapters/out/persistence/entities/storeSearchRequestEntity";
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { StoreScheduleEntity } from "@infrastructure/adapters/out/persistence/en
       useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
         type: "postgres",
         url: configService.getOrThrow<string>("DATABASE_URL"),
-        entities: [StoreEntity, StoreScheduleEntity],
+        entities: [StoreEntity, StoreScheduleEntity, StoreSearchRequestEntity],
         migrations: [__dirname + "/migrations/*{.js,.ts}"],
         synchronize: false,
         migrationsRun: false,

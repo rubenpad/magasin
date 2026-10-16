@@ -8,9 +8,11 @@ import { StoreRepositoryAdapter } from "@infrastructure/adapters/out/persistence
 import {
   FIND_CLOSEST_STORE_PORT,
   STORE_REPOSITORY,
+  STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
 } from "@infrastructure/configuration/findClosestStoreToken";
 import { StoresController } from "@infrastructure/adapters/in/http/findClosestStoreController";
 import { JoinedStoreScheduleRow } from "@infrastructure/adapters/out/persistence/entities/joinedStoreScheduledRow";
+import { of, throwError } from "rxjs";
 
 interface ScheduleFixture {
   id: string;
@@ -66,6 +68,7 @@ function joinedRows(stores: StoreFixture[]): JoinedStoreScheduleRow[] {
 
 describe("StoresController", () => {
   let app: NestFastifyApplication;
+  const auditSave = jest.fn((_audit: unknown) => of(undefined));
 
   const rowsByCoordinates: Readonly<Record<string, JoinedStoreScheduleRow[]>> = {
     "4.711,-74.0721": joinedRows([
@@ -154,6 +157,10 @@ describe("StoresController", () => {
           useExisting: StoreRepositoryAdapter,
         },
         {
+          provide: STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
+          useValue: { save: auditSave },
+        },
+        {
           provide: ConfigService,
           useValue: new ConfigService({ MAX_STORE_SEARCH_RADIUS_KM: 10 }),
         },
@@ -170,6 +177,7 @@ describe("StoresController", () => {
 
   beforeEach(() => {
     jest.useFakeTimers({ doNotFake: ["nextTick", "queueMicrotask"] });
+    auditSave.mockClear();
   });
 
   afterEach(() => {
@@ -195,9 +203,35 @@ describe("StoresController", () => {
       isOpen: true,
       coordinates: { latitude: 4.7112, longitude: -74.0718 },
     });
+    expect(auditSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedLatitude: 4.711,
+        requestedLongitude: -74.0721,
+        maxSearchRadiusMeters: 10_000,
+        selectedStoreId: "near-store",
+        selectedStoreDistanceMeters: 20,
+        selectedStoreIsOpen: true,
+        responseStatus: 200,
+      }),
+    );
   });
 
   it("skips a store without schedules and selects a farther open store", async () => {
+    jest.setSystemTime(new Date("2026-10-15T13:00:00.000Z"));
+
+    const response = await app
+      .getHttpAdapter()
+      .getInstance()
+      .inject("/v1/stores/closest?latitude=4.7120&longitude=-74.0721");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ storeId: "open-store", isOpen: true });
+  });
+
+  it("returns the store response when audit persistence fails", async () => {
+    auditSave.mockImplementationOnce(() =>
+      throwError(() => new Error("audit database unavailable")),
+    );
     jest.setSystemTime(new Date("2026-10-15T13:00:00.000Z"));
 
     const response = await app
@@ -218,6 +252,14 @@ describe("StoresController", () => {
       .inject("/v1/stores/closest?latitude=4.7130&longitude=-74.0721");
 
     expect(response.statusCode).toBe(404);
+    expect(auditSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedStoreId: null,
+        selectedStoreDistanceMeters: null,
+        selectedStoreIsOpen: null,
+        responseStatus: 404,
+      }),
+    );
   });
 
   it("returns 404 when schedules are outside the current weekday or time", async () => {

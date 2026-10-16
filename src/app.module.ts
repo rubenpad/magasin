@@ -3,9 +3,11 @@ import { TerminusModule } from "@nestjs/terminus";
 import { FindClosestStoreService } from "@domain/service/findClosestStoreService";
 import { StoresController } from "@infrastructure/adapters/in/http/findClosestStoreController";
 import { StoreRepositoryAdapter } from "@infrastructure/adapters/out/persistence/storeRepositoryAdapter";
+import { StoreSearchRequestAuditRepositoryAdapter } from "@infrastructure/adapters/out/persistence/storeSearchRequestAuditRepositoryAdapter";
 import {
   FIND_CLOSEST_STORE_PORT,
   STORE_REPOSITORY,
+  STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
 } from "@infrastructure/configuration/findClosestStoreToken";
 import { HealthController } from "@shared/infrastructure/adapters/in/health/healthController";
 import { DatabaseModule } from "@shared/infrastructure/configuration/database.module";
@@ -17,6 +19,7 @@ import { ConfigurationModule } from "@shared/infrastructure/configuration/config
   providers: [
     FindClosestStoreService,
     StoreRepositoryAdapter,
+    StoreSearchRequestAuditRepositoryAdapter,
     {
       provide: FIND_CLOSEST_STORE_PORT,
       useExisting: FindClosestStoreService,
@@ -24,6 +27,10 @@ import { ConfigurationModule } from "@shared/infrastructure/configuration/config
     {
       provide: STORE_REPOSITORY,
       useExisting: StoreRepositoryAdapter,
+    },
+    {
+      provide: STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
+      useExisting: StoreSearchRequestAuditRepositoryAdapter,
     },
   ],
 })
