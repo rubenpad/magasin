@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { LoggerModule } from "nestjs-pino";
 import { TerminusModule } from "@nestjs/terminus";
 import { FindClosestStoreService } from "@domain/service/findClosestStoreService";
 import { StoresController } from "@infrastructure/adapters/in/http/findClosestStoreController";
@@ -23,6 +24,7 @@ import { ObserveModule } from "@shared/infrastructure/configuration/observe.modu
       appKey: process.env.OBSERVE_APP_KEY as string,
       appSecret: process.env.OBSERVE_APP_SECRET as string,
     }),
+    LoggerModule.forRoot(),
     ConfigurationModule,
     DatabaseModule,
     TerminusModule,

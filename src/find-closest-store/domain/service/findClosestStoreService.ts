@@ -6,10 +6,10 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ClosestOpenStore } from "@domain/model/closestOpenStore";
 import { StoreCandidate } from "@domain/model/storeCandidate";
-import { FindClosestStoreUseCase } from "@domain/ports/in/findClosestStoreUseCase";
+import { ClosestOpenStore } from "@domain/model/closestOpenStore";
 import { StoreRepository } from "@domain/ports/out/storeRepository";
+import { FindClosestStoreUseCase } from "@domain/ports/in/findClosestStoreUseCase";
 import { StoreSearchRequestAuditRepository } from "@domain/ports/out/storeSearchRequestAuditRepository";
 import {
   STORE_REPOSITORY,
@@ -42,6 +42,7 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
         radiusMeters,
       );
     } catch (error) {
+      this.logger.error("Request failed trying to find closest store");
       throw new ServiceUnavailableException("Store search is unavailable", {
         cause: error,
       });
