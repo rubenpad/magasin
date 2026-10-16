@@ -321,3 +321,37 @@ Targets should be baselined during load testing and reviewed against production 
 ## Estimated delivery time
 
 Friday, October 16, 2026
+
+## Improvements and Trade-offs
+
+### 1. What would you improve in your code if you had more time? Why?
+
+The core endpoint, schema, dynamic `isOpen` calculation, tests, Docker setup, and local performance tooling are implemented. With more time, I would improve:
+
+- Discuss the need for audit writes for requests made to the endpoint. If this is a non-negotiable business requirement, use a more optimal strategy, such as replacing awaited audit writes with a durable queue or batch writer. Awaiting the write makes its cost visible and preserves the best-effort response contract, but it also adds database work to the request-latency path.
+- Increase coverage of edge-case scenarios in store selection.
+- Add query-duration, candidate-count, schedule-evaluation, and audit-write metrics so latency bottlenecks can be separated precisely.
+- Make the seed process idempotent and provide a repeatable performance environment with larger, production-like data volumes.
+- Add production safeguards such as authentication, authorization, rate limiting, timeouts, and stronger deployment defaults.
+
+### 2. What trade-offs did you make to deliver this project on time? What would you do next time to deliver more and sacrifice less?
+
+To deliver on time, I kept the scope focused on the core closest-open-store flow. I treated authentication, store-management APIs, and production deployment as responsibilities of other systems, and chose PostgreSQL/PostGIS and Docker Compose to deliver geographic search and local reproducibility quickly. I also kept audit persistence best-effort and used bounded metric dimensions to avoid unnecessary complexity and high-cardinality telemetry.
+Next time, I would clarify system ownership and non-functional priorities earlier, delegate features that belong in surrounding systems, and reserve more time for representative performance testing and production hardening. This would let me deliver more operational confidence without expanding the core service unnecessarily.
+
+### 3. How secure do you consider your service? Why?
+
+For the scope of this challenge, the service has a reasonable security baseline: it validates coordinates, uses parameterized SQL queries, relies on PostgreSQL constraints and foreign keys, keeps secrets in environment variables, avoids committing `.env`, and runs the production container as a non-root user.
+
+Additional controls like authentication and authorization could be delegate to a common upstream gateway, depending on how we plan to deploy the service.
+
+### 4. What would you do to measure the behavior of your product in a production environment?
+
+I would combine exiting metrics implemntation with database measurements and controlled operational review:
+
+- Track request rate, p50/p95/p99 latency, 4xx/5xx rates, timeouts, dropped requests, and availability by endpoint and deployment version.
+- Track found-store rate, no-store rate by bounded area and time bucket, selected-distance distributions, searches near the configured radius, and audit-write failures. The current implementation already emits the search counts, distance summary, radius-proximity count, and error counts; audit failure metrics should be added alongside the existing logs.
+- Monitor PostgreSQL pool usage, connection waits, active queries, PostGIS query duration, WAL and commit latency, CPU, memory, disk, locks, and database connection saturation.
+- Compare observed results with the k6 baseline and repeat load tests after changes to indexes, pool size, store density, or scheduling data.
+- Sample successful selections independently to verify nearest-open-store correctness and detect data-quality problems such as invalid timezones, missing locations, or malformed schedules.
+- Define alerts and service-level objectives only after establishing a baseline from representative production traffic, then review the metrics by city, time of day, release, and infrastructure configuration.
