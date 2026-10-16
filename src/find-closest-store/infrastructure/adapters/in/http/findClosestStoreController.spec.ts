@@ -12,7 +12,6 @@ import {
 } from "@infrastructure/configuration/findClosestStoreToken";
 import { StoresController } from "@infrastructure/adapters/in/http/findClosestStoreController";
 import { JoinedStoreScheduleRow } from "@infrastructure/adapters/out/persistence/entities/joinedStoreScheduledRow";
-import { of, throwError } from "rxjs";
 import { StandardSchemaValidationPipe } from "@nestjs/common";
 
 interface ScheduleFixture {
@@ -69,7 +68,7 @@ function joinedRows(stores: StoreFixture[]): JoinedStoreScheduleRow[] {
 
 describe("StoresController", () => {
   let app: NestFastifyApplication;
-  const auditSave = jest.fn((_audit: unknown) => of(undefined));
+  const auditSave = jest.fn((_audit: unknown) => Promise.resolve());
   const metricsIncrement = jest.fn();
   const metricsObserve = jest.fn();
 
@@ -240,9 +239,7 @@ describe("StoresController", () => {
   });
 
   it("returns the store response when audit persistence fails", async () => {
-    auditSave.mockImplementationOnce(() =>
-      throwError(() => new Error("audit database unavailable")),
-    );
+    auditSave.mockRejectedValueOnce(new Error("audit database unavailable"));
     jest.setSystemTime(new Date("2026-10-15T13:00:00.000Z"));
 
     const response = await app
