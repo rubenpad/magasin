@@ -43,6 +43,7 @@ services:
       - .env
     environment:
       PORT: ${PORT:-3000}
+      DB_POOL_MAX: ${DB_POOL_MAX:-20}
       MAX_STORE_SEARCH_RADIUS_KM: ${MAX_STORE_SEARCH_RADIUS_KM:-10}
       DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-instastore}"
     ports:

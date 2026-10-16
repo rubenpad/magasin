@@ -8,7 +8,8 @@ import { ConfigModule } from "@nestjs/config";
       isGlobal: true,
       validationSchema: z.object({
         DATABASE_URL: z.url().nonoptional(),
-        PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+        DB_POOL_MAX: z.coerce.number().positive().default(20),
+        PORT: z.coerce.number().min(1).max(65535).default(3000),
         MAX_STORE_SEARCH_RADIUS_KM: z.coerce.number().positive().default(10),
       }),
     }),

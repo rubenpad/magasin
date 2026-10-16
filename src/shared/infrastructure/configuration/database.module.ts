@@ -13,6 +13,7 @@ import { StoreSearchRequestEntity } from "@infrastructure/adapters/out/persisten
       useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
         type: "postgres",
         url: configService.getOrThrow<string>("DATABASE_URL"),
+        poolSize: configService.getOrThrow<number>("DB_POOL_MAX"),
         entities: [StoreEntity, StoreScheduleEntity, StoreSearchRequestEntity],
         migrations: [__dirname + "/migrations/*{.js,.ts}"],
         synchronize: false,

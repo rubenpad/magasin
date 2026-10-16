@@ -17,7 +17,6 @@ import {
   STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
 } from "@infrastructure/configuration/findClosestStoreToken";
 import { DateTime, Duration } from "luxon";
-import { EMPTY, catchError } from "rxjs";
 import { StoreSearchRequestAudit } from "@domain/model/storeSearchRequestAudit";
 import { MetricsPort } from "@shared/domain/ports/out/MetricsPort";
 
@@ -78,7 +77,7 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
         this.metricsPort.increment("store.search.near_radius_limit.total", 1, labels);
       }
 
-      this.persistAudit({
+      await this.persistAuditAsync({
         responseStatus: 200,
         selectedStoreIsOpen: true,
         requestedLatitude: latitude,
@@ -99,7 +98,7 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
 
     this.metricsPort.increment("store.search.completed.total", 1, labels);
     this.metricsPort.increment("store.search.not.found.total", 1, labels);
-    this.persistAudit({
+    await this.persistAuditAsync({
       requestedAt: referenceInstant.toJSDate(),
       requestedLatitude: latitude,
       requestedLongitude: longitude,
@@ -130,17 +129,13 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
     };
   }
 
-  private persistAudit(audit: StoreSearchRequestAudit): void {
-    this.auditRepository
-      .save(audit)
-      .pipe(
-        catchError((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          this.logger.error(`Failed to persist store search audit ${message}`);
-          return EMPTY;
-        }),
-      )
-      .subscribe();
+  private async persistAuditAsync(audit: StoreSearchRequestAudit): Promise<void> {
+    try {
+      await this.auditRepository.save(audit);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to persist store search audit ${message}`);
+    }
   }
 
   private isOpenAt(candidate: StoreCandidate, storeLocalDateTime: DateTime): boolean {
