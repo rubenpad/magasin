@@ -1,4 +1,3 @@
-/** @jest-config-loader esbuild-register */
 const config = {
   testEnvironment: "node",
   testMatch: ["<rootDir>/src/**/*.spec.ts"],

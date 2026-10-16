@@ -1,17 +1,15 @@
+import z from "zod";
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import * as Joi from "joi";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      validationSchema: Joi.object({
-        DATABASE_URL: Joi.string()
-          .uri({ scheme: ["postgres", "postgresql"] })
-          .required(),
-        PORT: Joi.number().integer().min(1).max(65535).default(3000),
-        MAX_STORE_SEARCH_RADIUS_KM: Joi.number().positive().default(10),
+      validationSchema: z.object({
+        DATABASE_URL: z.url().nonoptional(),
+        PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+        MAX_STORE_SEARCH_RADIUS_KM: z.coerce.number().positive().default(10),
       }),
     }),
   ],
