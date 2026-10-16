@@ -12,9 +12,21 @@ import {
 import { HealthController } from "@shared/infrastructure/adapters/in/health/healthController";
 import { DatabaseModule } from "@shared/infrastructure/configuration/database.module";
 import { ConfigurationModule } from "@shared/infrastructure/configuration/configuration.module";
+import { ObserveModule } from "@shared/infrastructure/configuration/observe.module";
 
 @Module({
-  imports: [ConfigurationModule, DatabaseModule, TerminusModule],
+  imports: [
+    ObserveModule.forRoot({
+      runtimeMetrics: true,
+      runtimeMetricsInterval: 30000,
+      serviceId: "instastore",
+      appKey: process.env.OBSERVE_APP_KEY as string,
+      appSecret: process.env.OBSERVE_APP_SECRET as string,
+    }),
+    ConfigurationModule,
+    DatabaseModule,
+    TerminusModule,
+  ],
   controllers: [HealthController, StoresController],
   providers: [
     FindClosestStoreService,

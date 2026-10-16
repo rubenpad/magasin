@@ -22,4 +22,4 @@ COPY --from=build --chown=node:node /app/dist ./dist
 USER node
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["node", "--enable-source-maps", "dist/main"]
