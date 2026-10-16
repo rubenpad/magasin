@@ -1,24 +1,8 @@
-import { Transform } from "class-transformer";
-import { IsNumber, Max, Min } from "class-validator";
+import { z } from "zod";
 
-function transformCoordinate(value: unknown): number {
-  if (typeof value !== "string" || value.trim() === "") {
-    return Number.NaN;
-  }
+export const findClosestStoreQuerySchema = z.object({
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+});
 
-  return Number(value);
-}
-
-export class FindClosestStoreQuery {
-  @Transform(({ value }) => transformCoordinate(value))
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(-90)
-  @Max(90)
-  latitude!: number;
-
-  @Transform(({ value }) => transformCoordinate(value))
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(-180)
-  @Max(180)
-  longitude!: number;
-}
+export type FindClosestStoreQuery = z.infer<typeof findClosestStoreQuerySchema>;
