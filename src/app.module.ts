@@ -1,20 +1,29 @@
 import { Module } from "@nestjs/common";
 import { TerminusModule } from "@nestjs/terminus";
-import { FIND_CLOSEST_STORE_PORT } from "./find-closest-store/infrastructure/configuration/findClosestStoreToken";
-import { StoresController } from "./find-closest-store/infrastructure/adapters/in/http/findClosestStoreController";
-import { HealthController } from "./shared/infrastructure/adapters/in/health/healthController";
-import { DatabaseModule } from "./shared/infrastructure/adapters/out/postgres/database.module";
-import { ConfigurationModule } from "./shared/infrastructure/configuration/configuration.module";
-import { FindClosestStoreService } from "./find-closest-store/domain/service/findClosestStoreService";
+import { FindClosestStoreService } from "@domain/service/findClosestStoreService";
+import { StoresController } from "@infrastructure/adapters/in/http/findClosestStoreController";
+import { StoreRepositoryAdapter } from "@infrastructure/adapters/out/persistence/storeRepositoryAdapter";
+import {
+  FIND_CLOSEST_STORE_PORT,
+  STORE_REPOSITORY,
+} from "@infrastructure/configuration/findClosestStoreToken";
+import { HealthController } from "@shared/infrastructure/adapters/in/health/healthController";
+import { DatabaseModule } from "@shared/infrastructure/configuration/database.module";
+import { ConfigurationModule } from "@shared/infrastructure/configuration/configuration.module";
 
 @Module({
   imports: [ConfigurationModule, DatabaseModule, TerminusModule],
   controllers: [HealthController, StoresController],
   providers: [
     FindClosestStoreService,
+    StoreRepositoryAdapter,
     {
       provide: FIND_CLOSEST_STORE_PORT,
       useExisting: FindClosestStoreService,
+    },
+    {
+      provide: STORE_REPOSITORY,
+      useExisting: StoreRepositoryAdapter,
     },
   ],
 })

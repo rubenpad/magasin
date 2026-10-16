@@ -7,7 +7,6 @@ RUN HUSKY=0 npm ci
 
 COPY nest-cli.json tsconfig.json tsconfig.build.json ./
 COPY src ./src
-
 RUN npm run build
 
 FROM node:24-alpine AS runtime

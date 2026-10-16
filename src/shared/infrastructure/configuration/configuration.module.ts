@@ -11,6 +11,7 @@ import * as Joi from "joi";
           .uri({ scheme: ["postgres", "postgresql"] })
           .required(),
         PORT: Joi.number().integer().min(1).max(65535).default(3000),
+        MAX_STORE_SEARCH_RADIUS_KM: Joi.number().positive().default(10),
       }),
     }),
   ],

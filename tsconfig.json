@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
+    "lib": ["ESNext", "ESNext.Iterator"],
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2022",
+    "target": "esnext",
     "sourceMap": true,
     "outDir": "./dist",
     "types": ["node", "jest"],

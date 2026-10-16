@@ -1,5 +1,5 @@
-import { Store } from "../../model/store";
+import { ClosestOpenStore } from "@domain/model/closestOpenStore";
 
 export interface FindClosestStoreUseCase {
-  execute(): Promise<Store>;
+  execute(latitude: number, longitude: number): Promise<ClosestOpenStore>;
 }
