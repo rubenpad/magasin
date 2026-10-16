@@ -6,6 +6,7 @@ import { FindClosestStoreService } from "@domain/service/findClosestStoreService
 import { StoreRepositoryAdapter } from "@infrastructure/adapters/out/persistence/storeRepositoryAdapter";
 import {
   FIND_CLOSEST_STORE_PORT,
+  METRICS_PORT,
   STORE_REPOSITORY,
   STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
 } from "@infrastructure/configuration/findClosestStoreToken";
@@ -69,6 +70,8 @@ function joinedRows(stores: StoreFixture[]): JoinedStoreScheduleRow[] {
 describe("StoresController", () => {
   let app: NestFastifyApplication;
   const auditSave = jest.fn((_audit: unknown) => of(undefined));
+  const metricsIncrement = jest.fn();
+  const metricsObserve = jest.fn();
 
   const rowsByCoordinates: Readonly<Record<string, JoinedStoreScheduleRow[]>> = {
     "4.711,-74.0721": joinedRows([
@@ -153,6 +156,10 @@ describe("StoresController", () => {
           useExisting: FindClosestStoreService,
         },
         {
+          provide: METRICS_PORT,
+          useValue: { increment: metricsIncrement, observe: metricsObserve },
+        },
+        {
           provide: STORE_REPOSITORY,
           useExisting: StoreRepositoryAdapter,
         },
@@ -179,6 +186,8 @@ describe("StoresController", () => {
   beforeEach(() => {
     jest.useFakeTimers({ doNotFake: ["nextTick", "queueMicrotask"] });
     auditSave.mockClear();
+    metricsIncrement.mockClear();
+    metricsObserve.mockClear();
   });
 
   afterEach(() => {

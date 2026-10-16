@@ -14,6 +14,8 @@ import { HealthController } from "@shared/infrastructure/adapters/in/health/heal
 import { DatabaseModule } from "@shared/infrastructure/configuration/database.module";
 import { ConfigurationModule } from "@shared/infrastructure/configuration/configuration.module";
 import { ObserveModule } from "@shared/infrastructure/configuration/observe.module";
+import { MetricsAdapter } from "@shared/infrastructure/adapters/out/MetricsAdapter";
+import { METRICS_PORT } from "@infrastructure/configuration/findClosestStoreToken";
 
 @Module({
   imports: [
@@ -34,6 +36,11 @@ import { ObserveModule } from "@shared/infrastructure/configuration/observe.modu
     FindClosestStoreService,
     StoreRepositoryAdapter,
     StoreSearchRequestAuditRepositoryAdapter,
+    MetricsAdapter,
+    {
+      provide: METRICS_PORT,
+      useExisting: MetricsAdapter,
+    },
     {
       provide: FIND_CLOSEST_STORE_PORT,
       useExisting: FindClosestStoreService,
