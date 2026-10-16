@@ -1,0 +1,25 @@
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
+import { StoreEntity } from "@infrastructure/adapters/out/persistence/entities/storeEntity";
+import { StoreScheduleEntity } from "@infrastructure/adapters/out/persistence/entities/storeScheduleEntity";
+
+@Module({
+  imports: [
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
+        type: "postgres",
+        url: configService.getOrThrow<string>("DATABASE_URL"),
+        entities: [StoreEntity, StoreScheduleEntity],
+        migrations: [__dirname + "/migrations/*{.js,.ts}"],
+        synchronize: false,
+        migrationsRun: false,
+        installExtensions: false,
+      }),
+    }),
+  ],
+  exports: [TypeOrmModule],
+})
+export class DatabaseModule {}
