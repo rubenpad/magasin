@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Local development](docs/LOCAL_DEVELOPMENT.md)
 - [Proposal and Scope](#proposal-and-scope)
 	- [In Scope](#in-scope)
 	- [Out of Scope](#out-of-scope)
@@ -34,6 +35,9 @@
 InstaStore selects the closest convenience store that is currently open for a grocery delivery requested by a B2B client. The service exposes an API that accepts a delivery location and returns the selected store, its coordinates, and its availability status.
 
 This document describes the initial scope, API contract, data model, selection algorithm, operational targets, tradeoffs, and delivery plan.
+
+For prerequisites, Docker Compose startup, migrations, database seeding, API checks, tests,
+and troubleshooting, see the [local development guide](docs/LOCAL_DEVELOPMENT.md).
 
 ## Proposal and Scope
 
