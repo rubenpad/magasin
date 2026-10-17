@@ -2,11 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { StoreCandidate } from "@domain/model/storeCandidate";
-import { StoreRepository } from "@domain/ports/out/storeRepository";
+import { StoreRepositoryPort } from "@domain/ports/out/storeRepositoryPort";
 import { JoinedStoreScheduleRow } from "./entities/joinedStoreScheduledRow";
 
 @Injectable()
-export class StoreRepositoryAdapter implements StoreRepository {
+export class StoreRepositoryAdapter implements StoreRepositoryPort {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async findCandidatesWithinRadius(

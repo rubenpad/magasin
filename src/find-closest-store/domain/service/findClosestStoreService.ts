@@ -5,20 +5,21 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
+import { DateTime, Duration } from "luxon";
 import { ConfigService } from "@nestjs/config";
 import { StoreCandidate } from "@domain/model/storeCandidate";
 import { ClosestOpenStore } from "@domain/model/closestOpenStore";
-import { StoreRepository } from "@domain/ports/out/storeRepository";
+import { StoreRepositoryPort } from "@domain/ports/out/storeRepositoryPort";
 import { FindClosestStoreUseCase } from "@domain/ports/in/findClosestStoreUseCase";
-import { StoreSearchRequestAuditRepository } from "@domain/ports/out/storeSearchRequestAuditRepository";
 import {
   METRICS_PORT,
+  QUEUE_PORT,
   STORE_REPOSITORY,
-  STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
 } from "@infrastructure/configuration/findClosestStoreToken";
-import { DateTime, Duration } from "luxon";
-import { StoreSearchRequestAudit } from "@domain/model/storeSearchRequestAudit";
 import { MetricsPort } from "@shared/domain/ports/out/MetricsPort";
+import { QueuePort } from "@shared/domain/ports/out/QueuePort";
+import { JobName } from "../../../store-search-request/infrastructure/adapters/in/queue";
+import { StoreSearchRequestEvent } from "../../../store-search-request/domain/model/storeSearchRequestEvent";
 
 @Injectable()
 export class FindClosestStoreService implements FindClosestStoreUseCase {
@@ -28,11 +29,11 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
   constructor(
     @Inject(METRICS_PORT)
     private readonly metricsPort: MetricsPort,
+    @Inject(QUEUE_PORT)
+    private readonly queuePort: QueuePort,
     @Inject(STORE_REPOSITORY)
-    private readonly storeRepository: StoreRepository,
+    private readonly storeRepository: StoreRepositoryPort,
     private readonly configService: ConfigService,
-    @Inject(STORE_SEARCH_REQUEST_AUDIT_REPOSITORY)
-    private readonly auditRepository: StoreSearchRequestAuditRepository,
   ) {}
 
   async execute(latitude: number, longitude: number): Promise<ClosestOpenStore> {
@@ -77,7 +78,7 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
         this.metricsPort.increment("store.search.near_radius_limit.total", 1, labels);
       }
 
-      await this.persistAuditAsync({
+      await this.publish({
         responseStatus: 200,
         selectedStoreIsOpen: true,
         requestedLatitude: latitude,
@@ -98,7 +99,8 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
 
     this.metricsPort.increment("store.search.completed.total", 1, labels);
     this.metricsPort.increment("store.search.not.found.total", 1, labels);
-    await this.persistAuditAsync({
+
+    await this.publish({
       requestedAt: referenceInstant.toJSDate(),
       requestedLatitude: latitude,
       requestedLongitude: longitude,
@@ -129,12 +131,15 @@ export class FindClosestStoreService implements FindClosestStoreUseCase {
     };
   }
 
-  private async persistAuditAsync(audit: StoreSearchRequestAudit): Promise<void> {
+  private async publish(storeSearchRequestEvent: StoreSearchRequestEvent): Promise<void> {
     try {
-      await this.auditRepository.save(audit);
+      await this.queuePort.add<StoreSearchRequestEvent>(
+        JobName.SAVE_STORE_SEARCH_REQUEST,
+        storeSearchRequestEvent,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to persist store search audit ${message}`);
+      this.logger.error(`Failed to publish store search request event ${message}`);
     }
   }
 
