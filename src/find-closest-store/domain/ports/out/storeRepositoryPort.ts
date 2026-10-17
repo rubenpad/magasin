@@ -1,6 +1,6 @@
 import { StoreCandidate } from "@domain/model/storeCandidate";
 
-export interface StoreRepository {
+export interface StoreRepositoryPort {
   findCandidatesWithinRadius(
     latitude: number,
     longitude: number,

@@ -1,18 +1,25 @@
-import { ConfigService } from "@nestjs/config";
-import { Test } from "@nestjs/testing";
-import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
+import { LoggerModule } from "nestjs-pino";
 import { DataSource } from "typeorm";
+import { Test } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
+import { EventEmitterModule } from "@nestjs/event-emitter";
+import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 import { FindClosestStoreService } from "@domain/service/findClosestStoreService";
 import { StoreRepositoryAdapter } from "@infrastructure/adapters/out/persistence/storeRepositoryAdapter";
 import {
   FIND_CLOSEST_STORE_PORT,
   METRICS_PORT,
+  QUEUE_PORT,
   STORE_REPOSITORY,
-  STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
+  STORE_SEARCH_REQUEST_PORT,
+  STORE_SEARCH_REQUEST_REPOSITORY,
 } from "@infrastructure/configuration/findClosestStoreToken";
 import { StoresController } from "@infrastructure/adapters/in/http/findClosestStoreController";
 import { JoinedStoreScheduleRow } from "@infrastructure/adapters/out/persistence/entities/joinedStoreScheduledRow";
 import { StandardSchemaValidationPipe } from "@nestjs/common";
+import { StoreSearchRequestListener } from "../../../../../store-search-request/infrastructure/adapters/in/storeSearchRequestListener";
+import { StoreSearchRequestService } from "../../../../../store-search-request/domain/service/storeSearchRequestService";
+import { JobName } from "../../../../../store-search-request/infrastructure/adapters/in/queue";
 
 interface ScheduleFixture {
   id: string;
@@ -68,6 +75,7 @@ function joinedRows(stores: StoreFixture[]): JoinedStoreScheduleRow[] {
 
 describe("StoresController", () => {
   let app: NestFastifyApplication;
+  const queueAdd = jest.fn(() => Promise.resolve());
   const auditSave = jest.fn((_audit: unknown) => Promise.resolve());
   const metricsIncrement = jest.fn();
   const metricsObserve = jest.fn();
@@ -146,13 +154,20 @@ describe("StoresController", () => {
       },
     } as unknown as DataSource;
     const moduleRef = await Test.createTestingModule({
+      imports: [LoggerModule.forRoot(), EventEmitterModule.forRoot()],
       controllers: [StoresController],
       providers: [
-        FindClosestStoreService,
         StoreRepositoryAdapter,
+        FindClosestStoreService,
+        StoreSearchRequestService,
+        StoreSearchRequestListener,
         {
           provide: FIND_CLOSEST_STORE_PORT,
           useExisting: FindClosestStoreService,
+        },
+        {
+          provide: QUEUE_PORT,
+          useValue: { add: queueAdd },
         },
         {
           provide: METRICS_PORT,
@@ -163,7 +178,11 @@ describe("StoresController", () => {
           useExisting: StoreRepositoryAdapter,
         },
         {
-          provide: STORE_SEARCH_REQUEST_AUDIT_REPOSITORY,
+          provide: STORE_SEARCH_REQUEST_PORT,
+          useExisting: StoreSearchRequestService,
+        },
+        {
+          provide: STORE_SEARCH_REQUEST_REPOSITORY,
           useValue: { save: auditSave },
         },
         {
@@ -212,7 +231,8 @@ describe("StoresController", () => {
       isOpen: true,
       coordinates: { latitude: 4.7112, longitude: -74.0718 },
     });
-    expect(auditSave).toHaveBeenCalledWith(
+    expect(queueAdd).toHaveBeenCalledWith(
+      JobName.SAVE_STORE_SEARCH_REQUEST,
       expect.objectContaining({
         requestedAt: expect.any(Date),
         requestedLatitude: 4.711,
@@ -239,7 +259,7 @@ describe("StoresController", () => {
   });
 
   it("returns the store response when audit persistence fails", async () => {
-    auditSave.mockRejectedValueOnce(new Error("audit database unavailable"));
+    queueAdd.mockRejectedValueOnce(new Error("failed publishing to queue"));
     jest.setSystemTime(new Date("2026-10-15T13:00:00.000Z"));
 
     const response = await app
@@ -260,7 +280,8 @@ describe("StoresController", () => {
       .inject("/v1/stores/closest?latitude=4.7130&longitude=-74.0721");
 
     expect(response.statusCode).toBe(404);
-    expect(auditSave).toHaveBeenCalledWith(
+    expect(queueAdd).toHaveBeenCalledWith(
+      JobName.SAVE_STORE_SEARCH_REQUEST,
       expect.objectContaining({
         selectedStoreId: null,
         selectedStoreDistanceMeters: null,

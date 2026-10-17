@@ -1,10 +1,10 @@
-export interface StoreSearchRequestAudit {
+export interface StoreSearchRequestEvent {
   requestedAt: Date;
+  responseStatus: number;
   requestedLatitude: number;
   requestedLongitude: number;
   maxSearchRadiusMeters: number;
   selectedStoreId: string | null;
-  selectedStoreDistanceMeters: number | null;
   selectedStoreIsOpen: boolean | null;
-  responseStatus: number;
+  selectedStoreDistanceMeters: number | null;
 }

@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
 import { StoreEntity } from "@infrastructure/adapters/out/persistence/entities/storeEntity";
 import { StoreScheduleEntity } from "@infrastructure/adapters/out/persistence/entities/storeScheduleEntity";
-import { StoreSearchRequestEntity } from "@infrastructure/adapters/out/persistence/entities/storeSearchRequestEntity";
+import { StoreSearchRequestEntity } from "../../../store-search-request/infrastructure/adapters/out/persistence/entities/storeSearchRequestEntity";
 
 @Module({
   imports: [
