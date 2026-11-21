@@ -5,8 +5,8 @@ export interface JoinedStoreScheduleRow {
   longitude: number;
   timezone: string;
   distanceMeters: number;
-  scheduleId: string | null;
-  scheduleDayOfWeek: number | null;
-  scheduleStartTime: string | null;
-  scheduleEndTime: string | null;
+  scheduleId: string;
+  scheduleDayOfWeek: number;
+  scheduleStartTime: string;
+  scheduleEndTime: string;
 }

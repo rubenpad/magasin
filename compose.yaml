@@ -86,6 +86,27 @@ services:
       retries: 5
       start_period: 15s
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    command: ["node", "--enable-source-maps", "dist/worker"]
+    environment:
+      DB_POOL_MAX: ${WORKER_DB_POOL_MAX:-5}
+      STORE_SEARCH_REQUEST_WORKER_CONCURRENCY: ${STORE_SEARCH_REQUEST_WORKER_CONCURRENCY:-5}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-magasin}"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
   gateway:
     image: nginx:1.27-alpine
     ports:

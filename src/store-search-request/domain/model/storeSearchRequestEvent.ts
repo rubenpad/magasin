@@ -1,4 +1,5 @@
 export interface StoreSearchRequestEvent {
+  requestId: string;
   requestedAt: Date;
   responseStatus: number;
   requestedLatitude: number;

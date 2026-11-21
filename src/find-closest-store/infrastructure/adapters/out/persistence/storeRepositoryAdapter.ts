@@ -13,72 +13,58 @@ export class StoreRepositoryAdapter implements StoreRepositoryPort {
     latitude: number,
     longitude: number,
     radiusMeters: number,
+    referenceInstant: Date,
   ): Promise<StoreCandidate[]> {
     const rows = await this.dataSource.query<Array<JoinedStoreScheduleRow>>(
       `
-				SELECT
-					stores.id AS "storeId",
-					stores.name AS "storeName",
-					ST_Y(stores.location::geometry) AS latitude,
-					ST_X(stores.location::geometry) AS longitude,
-					stores.timezone,
-					ST_Distance(
-						stores.location,
-						ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
-					) AS "distanceMeters"
-					, schedules.id AS "scheduleId",
-					schedules.day_of_week AS "scheduleDayOfWeek",
-					schedules.start_time AS "scheduleStartTime",
-					schedules.end_time AS "scheduleEndTime"
-				FROM stores
-				LEFT JOIN store_schedules AS schedules
-					ON schedules.store_id = stores.id
-				WHERE ST_DWithin(
-					stores.location,
-					ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
-					$3
-				)
-				ORDER BY "distanceMeters" ASC, stores.id, schedules.day_of_week, schedules.start_time
-			`,
-      [longitude, latitude, radiusMeters],
+        WITH requested AS (
+          SELECT ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography AS point
+        )
+        SELECT
+          stores.id AS "storeId",
+          stores.name AS "storeName",
+          ST_Y(stores.location::geometry) AS latitude,
+          ST_X(stores.location::geometry) AS longitude,
+          stores.timezone,
+          ST_Distance(stores.location, requested.point) AS "distanceMeters",
+          schedules.id AS "scheduleId",
+          schedules.day_of_week AS "scheduleDayOfWeek",
+          schedules.start_time AS "scheduleStartTime",
+          schedules.end_time AS "scheduleEndTime"
+        FROM stores
+        CROSS JOIN requested
+        JOIN store_schedules AS schedules
+          ON schedules.store_id = stores.id
+         AND schedules.day_of_week = EXTRACT(ISODOW FROM ($4::timestamptz AT TIME ZONE stores.timezone))::smallint
+        WHERE ST_DWithin(stores.location, requested.point, $3)
+        ORDER BY "distanceMeters" ASC, stores.id, schedules.start_time
+      `,
+      [longitude, latitude, radiusMeters, referenceInstant],
     );
 
-    const stores = rows
-      .filter((row) =>
-        [row.scheduleId, row.scheduleEndTime, row.scheduleDayOfWeek, row.scheduleStartTime].every(
-          Boolean,
-        ),
-      )
-      .reduce<Map<string, StoreCandidate>>((result, row) => {
-        const candidate = result.get(row.storeId) ?? {
-          store: {
-            id: row.storeId,
-            name: row.storeName,
-            coordinates: {
-              latitude: row.latitude,
-              longitude: row.longitude,
-            },
-            timezone: row.timezone,
-          },
-          distanceMeters: row.distanceMeters,
-          schedules: [],
-        };
+    const candidates = new Map<string, StoreCandidate>();
 
-        if (!result.has(row.storeId)) {
-          result.set(row.storeId, candidate);
-        }
+    for (const row of rows) {
+      const candidate = candidates.getOrInsertComputed(row.storeId, () => ({
+        store: {
+          id: row.storeId,
+          name: row.storeName,
+          coordinates: { latitude: row.latitude, longitude: row.longitude },
+          timezone: row.timezone,
+        },
+        distanceMeters: row.distanceMeters,
+        schedules: [],
+      }));
 
-        candidate.schedules.push({
-          id: row.scheduleId as string,
-          storeId: row.storeId,
-          dayOfWeek: row.scheduleDayOfWeek as number,
-          startTime: row.scheduleStartTime as string,
-          endTime: row.scheduleEndTime as string,
-        });
+      candidate.schedules.push({
+        id: row.scheduleId,
+        storeId: row.storeId,
+        dayOfWeek: row.scheduleDayOfWeek,
+        startTime: row.scheduleStartTime,
+        endTime: row.scheduleEndTime,
+      });
+    }
 
-        return result;
-      }, new Map());
-
-    return stores.values().toArray();
+    return [...candidates.values()];
   }
 }

@@ -187,7 +187,7 @@ SELECT
     s.id,
     schedule.day_of_week,
     TIME '00:00',
-    TIME '23:59:59',
+    TIME '24:00:00',
     NOW(),
     NOW()
 FROM stores s
@@ -304,7 +304,7 @@ SELECT
     s.id,
     schedule.day_of_week,
     TIME '18:00',
-    TIME '23:59:59',
+    TIME '24:00:00',
     NOW(),
     NOW()
 FROM stores s
@@ -394,19 +394,19 @@ FROM stores s
 CROSS JOIN (
     VALUES
         (1, TIME '00:00', TIME '12:00'),
-        (1, TIME '12:00', TIME '23:59:59'),
+        (1, TIME '12:00', TIME '24:00:00'),
         (2, TIME '00:00', TIME '12:00'),
-        (2, TIME '12:00', TIME '23:59:59'),
+        (2, TIME '12:00', TIME '24:00:00'),
         (3, TIME '00:00', TIME '12:00'),
-        (3, TIME '12:00', TIME '23:59:59'),
+        (3, TIME '12:00', TIME '24:00:00'),
         (4, TIME '00:00', TIME '12:00'),
-        (4, TIME '12:00', TIME '23:59:59'),
+        (4, TIME '12:00', TIME '24:00:00'),
         (5, TIME '00:00', TIME '12:00'),
-        (5, TIME '12:00', TIME '23:59:59'),
+        (5, TIME '12:00', TIME '24:00:00'),
         (6, TIME '00:00', TIME '12:00'),
-        (6, TIME '12:00', TIME '23:59:59'),
+        (6, TIME '12:00', TIME '24:00:00'),
         (7, TIME '00:00', TIME '12:00'),
-        (7, TIME '12:00', TIME '23:59:59')
+        (7, TIME '12:00', TIME '24:00:00')
 ) AS schedule(day_of_week, start_time, end_time)
 WHERE s.id IN (
     '00000000-0000-0000-0000-000000000036',

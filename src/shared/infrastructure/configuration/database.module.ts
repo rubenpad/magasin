@@ -14,6 +14,10 @@ import { StoreSearchRequestEntity } from "../../../store-search-request/infrastr
         type: "postgres",
         url: configService.getOrThrow<string>("DATABASE_URL"),
         poolSize: configService.getOrThrow<number>("DB_POOL_MAX"),
+        connectTimeoutMS: configService.getOrThrow<number>("DB_CONNECTION_TIMEOUT_MS"),
+        extra: {
+          statement_timeout: configService.getOrThrow<number>("DB_STATEMENT_TIMEOUT_MS"),
+        },
         entities: [StoreEntity, StoreScheduleEntity, StoreSearchRequestEntity],
         migrations: [__dirname + "/migrations/*{.js,.ts}"],
         synchronize: false,

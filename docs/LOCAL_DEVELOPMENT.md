@@ -88,7 +88,10 @@ This starts:
 
 - `db`: PostgreSQL 16 with PostGIS;
 - `migrate`: the TypeORM migration job;
-- `api`: the NestJS HTTP service.
+- `redis`: the queue that carries store search records from the API to the worker;
+- `api`: the NestJS HTTP service;
+- `worker`: consumes store search records from Redis and saves them to PostgreSQL;
+- `gateway`: nginx, which load-balances requests across the API replicas.
 
 The API waits for the database health check and for the migration job to complete successfully.
 

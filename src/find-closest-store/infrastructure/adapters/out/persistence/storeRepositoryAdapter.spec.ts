@@ -3,7 +3,7 @@ import { StoreCandidate } from "@domain/model/storeCandidate";
 import { StoreRepositoryAdapter } from "@infrastructure/adapters/out/persistence/storeRepositoryAdapter";
 
 describe("StoreRepositoryAdapter", () => {
-  it("loads stores and schedules in one nearest-first query", async () => {
+  it("loads stores and their schedules for the local weekday in one nearest-first query", async () => {
     const queryCalls: Array<{ query: string; parameters?: unknown[] }> = [];
     const queryRows = [
       {
@@ -64,14 +64,20 @@ describe("StoreRepositoryAdapter", () => {
       ],
     };
 
-    await expect(repository.findCandidatesWithinRadius(4.711, -74.0721, 10_000)).resolves.toEqual([
-      candidate,
-    ]);
+    const referenceInstant = new Date("2026-10-15T13:00:00.000Z");
+
+    await expect(
+      repository.findCandidatesWithinRadius(4.711, -74.0721, 10_000, referenceInstant),
+    ).resolves.toEqual([candidate]);
 
     expect(queryCalls).toHaveLength(1);
-    expect(queryCalls[0].query).toContain("LEFT JOIN store_schedules");
+    expect(queryCalls[0].query).toContain("JOIN store_schedules");
+    expect(queryCalls[0].query).not.toContain("LEFT JOIN");
+    expect(queryCalls[0].query).toContain(
+      "EXTRACT(ISODOW FROM ($4::timestamptz AT TIME ZONE stores.timezone))",
+    );
     expect(queryCalls[0].query).toContain("ST_DWithin");
     expect(queryCalls[0].query).toContain('ORDER BY "distanceMeters" ASC');
-    expect(queryCalls[0].parameters).toEqual([-74.0721, 4.711, 10_000]);
+    expect(queryCalls[0].parameters).toEqual([-74.0721, 4.711, 10_000, referenceInstant]);
   });
 });
