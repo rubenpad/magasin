@@ -5,6 +5,9 @@ export class StoreSearchRequestEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
 
+  @Column({ name: "request_id", type: "uuid", unique: true })
+  requestId!: string;
+
   @Column({ name: "requested_at", type: "timestamptz" })
   requestedAt!: Date;
 

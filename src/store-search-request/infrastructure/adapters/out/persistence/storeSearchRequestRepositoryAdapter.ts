@@ -12,6 +12,7 @@ export class StoreSearchRequestAuditRepositoryAdapter implements StoreSearchRequ
     await this.dataSource.query(
       `
           INSERT INTO store_search_requests (
+            request_id,
             requested_at,
             requested_location,
             max_search_radius_meters,
@@ -21,15 +22,18 @@ export class StoreSearchRequestAuditRepositoryAdapter implements StoreSearchRequ
             response_status
           ) VALUES (
             $1,
-            ST_SetSRID(ST_MakePoint($3, $2), 4326)::geography,
-            $4,
+            $2,
+            ST_SetSRID(ST_MakePoint($4, $3), 4326)::geography,
             $5,
             $6,
             $7,
-            $8
+            $8,
+            $9
           )
+          ON CONFLICT (request_id) DO NOTHING
         `,
       [
+        audit.requestId,
         audit.requestedAt,
         audit.requestedLatitude,
         audit.requestedLongitude,
@@ -40,6 +44,5 @@ export class StoreSearchRequestAuditRepositoryAdapter implements StoreSearchRequ
         audit.responseStatus,
       ],
     );
-    return undefined;
   }
 }

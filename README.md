@@ -226,6 +226,7 @@ This table records endpoint calls and their outcomes for auditing and business a
 | Field | Type | Description |
 | --- | --- | --- |
 | `id` | UUID | Unique search request identifier; primary key. |
+| `request_id` | UUID, unique | Idempotency key generated per search. Queue retries reuse it, so a retried job cannot insert a duplicate record. |
 | `requested_at` | TIMESTAMPTZ | Instant at which the search was performed. |
 | `requested_location` | GEOGRAPHY(POINT, 4326) | Customer's requested delivery coordinates. |
 | `max_search_radius_meters` | INTEGER | Snapshot of the configured maximum radius used for this request. |
